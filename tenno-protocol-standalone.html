@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Tenno Protocol</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{background:#0d0e11;}
+body{color:#c7ccd6;font-family:'Inter',sans-serif;min-height:100vh;padding:24px 16px 64px;-webkit-tap-highlight-color:transparent;}
+.wrap{max-width:800px;margin:0 auto;}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+const C = {
+  bg: "#0d0e11", panel: "#1c1f26", panel2: "#15171c",
+  line: "#2a2e36", lineSoft: "#22252c",
+  text: "#ffffff", body: "#c7ccd6", muted: "#9aa0ac",
+  green: "#34d399", yellow: "#facc15", sky: "#38bdf8",
+  orange: "#fb923c", purple: "#d8b4fe", optBorder: "#fb923c",
+};
+
+const GLOSSARY = {
+  holokeys: { t: "Corrupted Holokeys", d: "A currency dropped by Sisters of Parvos and Railjack Void Storm missions. Forty of them buy one Tenet weapon from Ergo Glast." },
+  mr: { t: "Mastery Rank", d: "Your account level, raised by ranking up new Warframes and weapons. It increases daily standing caps and unlocks higher-tier equipment, so leveling every item once is worthwhile even if you never use it again." },
+  umbraforma: { t: "Umbra Forma", d: "The rarest Forma type. It grants the Umbra polarity, which the powerful Umbral mod set requires. Obtainable mainly from Teshin's eight-week rotation and high Nightwave ranks. Spend it only on Warframes you are committed to." },
+  archonshard: { t: "Archon Shard", d: "A permanent stat upgrade socketed directly into a Warframe, for example flat ability strength, energy, or health. Shards are untradeable and their sources are weekly-limited, which makes them the true long-term power grind." },
+  tauforged: { t: "Tau-Forged Shard", d: "An enhanced variant of an Archon Shard with roughly fifty percent stronger values. These appear most reliably in Elite Deep Archimedea rewards." },
+  steelessence: { t: "Steel Essence", d: "The Steel Path currency, earned from daily Incursions and Acolyte kills. It is spent at Teshin's shop on Kuva, relic packs, and the Umbra Forma rotation." },
+  steelpath: { t: "Steel Path", d: "A harder copy of the entire star chart with enemies one hundred levels above normal. It unlocks after clearing every node once and offers considerably better rewards." },
+  searchpulse: { t: "Search Pulse", d: "The weekly key for Netracells and both Archimedea modes. You receive five per week across all three activities. Each Netracell costs one pulse and each Archimedea costs two, which is why the optimal split is two, two, and one." },
+  pathosclamps: { t: "Pathos Clamps", d: "Trophies awarded for defeating the Orowyrm boss at the end of a Duviri run. They are the currency for Acrithis's weekly shop." },
+  vitus: { t: "Vitus Essence", d: "The Arbitration currency, dropped by Arbitration Drones and mission rewards. It buys Galvanized mods, which upgrade core weapon mods with kill-stacking bonuses." },
+  voidfissure: { t: "Void Fissure", d: "A mission variant in which an equipped relic is opened by collecting ten Void Reactant from corrupted enemies. At the end, every squad member may choose any player's reward, which is why cracking in a full squad quadruples your options." },
+  necramech: { t: "Necramech", d: "A pilotable battle mech built through the Necraloid syndicate on Deimos. A basic one is a hard requirement for The New War quest." },
+  incarnon: { t: "Incarnon", d: "An adapter that gives a specific weapon an evolving second form with dramatically higher damage. Adapters come from the Steel Path Circuit, two choices per week, and produce some of the strongest weapons in the game." },
+  helminth: { t: "Helminth", d: "An organism in your Orbiter, unlocked through the Entrati syndicate, that can replace one ability on any Warframe with an ability drawn from another. It is fed with spare resources." },
+  ayatan: { t: "Ayatan Sculpture", d: "A treasure statue that gains value when Ayatan Stars are socketed into it. A filled statue sells to Maroo for roughly 1,500 to 2,500 Endo or more, depending on the model." },
+  arcane: { t: "Arcane", d: "An equippable passive enhancement slotted onto Warframes, weapons, or the Operator, for example bonus damage after a headshot kill. Arcanes rank up by combining duplicates and are a major endgame power layer." },
+  catalyst: { t: "Orokin Catalyst", d: "A weapon 'potato': an upgrade item that doubles a weapon's mod capacity. The Warframe equivalent is the Orokin Reactor. Installing one is the single biggest power jump an item can receive." },
+  reactor: { t: "Orokin Reactor", d: "A Warframe 'potato': an upgrade item that doubles a Warframe's mod capacity. The weapon equivalent is the Orokin Catalyst." },
+  radshare: { t: "Radshare", d: "A squad in which all four players equip the same relic refined to Radiant quality. Because everyone can pick any player's reward, four Radiant copies give the best possible odds at the rare drop." },
+  ducats: { t: "Ducats", d: "A currency obtained by trading spare Prime parts into kiosks on any relay. It is spent exclusively at Baro Ki'Teer, whose Primed mods are long-term essentials." },
+  vosfor: { t: "Vosfor", d: "A currency created by dissolving unwanted Arcanes at Loid in the Sanctum Anatomica. It buys relic and Arcane packs, effectively converting spare Arcanes into Prime income." },
+  parazon: { t: "Parazon", d: "Your wrist-mounted hacking and finisher blade. Potency and Antivirus mods from Höllvania slot into it and are consumed through use, after which they can be dissolved into Endo." },
+  eximus: { t: "Eximus", d: "Elite enemy variants with glowing auras and overguard. They drop Riven Slivers, the currency Paladino converts into Riven goods each week." },
+  acolyte: { t: "Acolyte", d: "Steel Path mini-bosses that hunt you every few minutes during missions. Each kill drops Steel Essence and has a chance at Arcanes." },
+  riven: { t: "Riven Mod", d: "A randomized weapon mod with hidden stats revealed by completing a challenge, then rerollable with Kuva. Rivens for popular weapons trade for large amounts of Platinum." },
+  relic: { t: "Relic", d: "A container holding Prime parts, opened by carrying it into a Void Fissure mission. Relics come in four ages, Lith, Meso, Neo, and Axi, and can be refined with Void Traces to improve rare-drop odds." },
+  standing: { t: "Standing", d: "Faction reputation with a daily earning cap that scales with Mastery Rank. Each faction sells its own rewards, so standing left unspent at cap is wasted income." },
+  kuva: { t: "Kuva", d: "A resource used primarily to reroll the stats on Riven mods, and to craft certain weapons. The cheapest reliable sources are Teshin's weekly shop and the daily Sortie." },
+  forma: { t: "Forma", d: "A consumable that changes one mod slot's polarity, halving the cost of matching mods. Serious builds use three to five per item, and each application resets the item to unranked, hence the advice to always keep one crafting." },
+  endo: { t: "Endo", d: "The resource used together with credits to rank up mods. Since ranked mods are where nearly all of your power comes from, Endo demand never ends." },
+  aya: { t: "Aya", d: "A drop from bounties and missions that Varzia exchanges for relics of the currently unvaulted Prime gear. It is the only way to target specific retired Primes." },
+  baro: { t: "Baro Ki'Teer", d: "A traveling Void trader who appears at a different relay every two weeks for a 48-hour window, selling Primed mods and other exclusives for Ducats and Credits." },
+  varzia: { t: "Varzia", d: "The Prime Resurgence vendor in Maroo's Bazaar. Her stock of unvaultable relics rotates roughly every four weeks, letting you target specific retired Primes with Aya or Regal Aya." },
+};
+
+const GLOSS_ORDER = [
+  { key: "holokeys", re: /\bCorrupted Holokeys\b/ },
+  { key: "mr", re: /\bMastery Rank\b/ },
+  { key: "umbraforma", re: /\bUmbra Forma\b/ },
+  { key: "archonshard", re: /\bArchon Shards?\b/ },
+  { key: "steelessence", re: /\bSteel Essence\b/ },
+  { key: "steelpath", re: /\bSteel Path\b/ },
+  { key: "searchpulse", re: /\bSearch Pulses?\b/ },
+  { key: "pathosclamps", re: /\bPathos Clamps\b/ },
+  { key: "vitus", re: /\bVitus(?: Essence)?\b/ },
+  { key: "voidfissure", re: /\bVoid Fissures?\b/ },
+  { key: "tauforged", re: /\bTau-Forged\b/ },
+  { key: "necramech", re: /\bNecramechs?\b/ },
+  { key: "incarnon", re: /\bIncarnons?(?: adapters?)?\b/ },
+  { key: "helminth", re: /\bHelminth\b/ },
+  { key: "ayatan", re: /\bAyatans?(?: [Ss]culptures?| Stars| Hunt)?\b/ },
+  { key: "arcane", re: /\bArcanes?\b/ },
+  { key: "catalyst", re: /\bCatalysts?\b/ },
+  { key: "reactor", re: /\bReactors?\b/ },
+  { key: "radshare", re: /\b[Rr]adshares?\b/ },
+  { key: "ducats", re: /\bDucats\b/ },
+  { key: "vosfor", re: /\bVosfor\b/ },
+  { key: "parazon", re: /\bParazon\b/ },
+  { key: "eximus", re: /\bEximus\b/ },
+  { key: "acolyte", re: /\bAcolytes?\b/ },
+  { key: "riven", re: /\bRivens?\b/ },
+  { key: "relic", re: /\b[Rr]elics?\b/ },
+  { key: "standing", re: /\b[Ss]tanding\b/ },
+  { key: "kuva", re: /\bKuva\b/ },
+  { key: "forma", re: /\bForma\b/ },
+  { key: "endo", re: /\bEndo\b/ },
+  { key: "aya", re: /\bAya\b/ },
+  { key: "baro", re: /\bBaro( Ki'Teer)?\b/ },
+  { key: "varzia", re: /\bVarzia\b/ },
+];
+
+/* ============================================================
+   ROUTINE DATA
+   ============================================================ */
+const dailyItems = [
+  { id: "d1", t: "Daily Login", d: "30 seconds. Milestone days (200/400/600/900) pay exclusive Primed mods.", i: { a: "Advance the milestone counter, never break the chain.", l: "Game or companion app." }, r: ["Primed mods"] },
+  { id: "d2", t: "Foundry Refresh", d: "A Forma should ALWAYS be cooking, you need dozens, at 24h each.", i: { a: "Collect finished builds, queue Forma plus Fieldron, Detonite, and Mutagen Mass.", p: "Forma blueprints drop constantly from relics.", l: "Orbiter Foundry, or the companion app from bed." }, r: ["Forma", "Weapon parts"] },
+  { id: "d3", t: "First Mission Win", d: "First mission after reset pays 2x credits, point it at a Dark Sector.", i: { a: "About 50k credits for one 5-minute run.", p: "Index, bounties, and open worlds do not count as the first win.", l: "Dark Sector nodes, special icon, 1 to 2 per planet." }, r: ["~50k Credits"] },
+  { id: "d4", t: "Syndicate Standing", d: "Mission XP auto-fills your daily cap. Capped standing is wasted standing.", i: { a: "Spend maxed standing on augments (sell for plat) or relic packs.", p: "Pledge up to 3 compatible syndicates, rivals lose standing as you gain.", l: "Syndicate console, Orbiter." }, r: ["Augments", "Relic packs", "Plat"] },
+  { id: "d5", t: "Daily Sortie", d: "Three modifier missions. About 25% Riven chance per day.", i: { p: "Needs The War Within. Build against the listed modifiers.", l: "Star chart, Sortie panel." }, r: ["Riven 25%", "Kuva", "Ayatan"] },
+  { id: "d6", t: "Focus Farming", d: "Fill the daily Focus cap, Zenurik first for energy regen.", i: { p: "A Focus Lens on max-rank gear converts its XP. Lenses come from bounties and Baro.", l: "Any high-XP mission." }, r: ["Focus points"] },
+  { id: "d7", t: "Nightwave Dailies", d: "Only grab them when they overlap what you were already playing.", i: { l: "Nightwave console, Orbiter." }, r: ["NW standing"] },
+  { id: "d8", t: "Steel Path Incursion", d: "Daily hard-mode alerts paying Steel Essence for Teshin's shop.", i: { p: "Needs Steel Path unlocked (clear the whole normal chart).", l: "Star chart, Steel Path toggle on." }, r: ["Steel Essence"] },
+  { id: "d9", t: "Syndicate Alert", d: "One bonus mission for extra standing beyond the passive cap.", i: { l: "Alert marker on the star chart." }, r: ["Standing"] },
+  { id: "d10", t: "Simaris Synthesis", d: "Scan the daily target, buys back quest frames you sold.", i: { p: "Equip the Synthesis Scanner (and Kinetic Siphon Traps) from Simaris first.", l: "Targets roam normal missions, Simaris in any relay." }, r: ["Simaris standing"] },
+  { id: "d11", t: "Maroo Daily Mods", d: "Rotating daily mod stock, a cheap gap-filler.", i: { l: "Maroo's Bazaar, Mars." }, r: ["Mods"] },
+  { id: "d12", t: "Operator Resource Trade", d: "One conversion per day toward Operator upgrades, adds up over months.", i: { p: "Latest mainline quest content required.", l: "Via Maroo's services post-quest." }, r: ["Operator resources"] },
+  { id: "d13", t: "Ticker Check", d: "Daily-rotating Railjack crew, good crew makes solo Railjack trivial.", i: { l: "Ticker, Fortuna, Venus." }, r: ["Railjack crew"] },
+  { id: "d14", t: "KIM Dialogue", opt: true, d: "One chat per Höllvania character. Cosmetic relationship rewards.", i: { l: "KIM terminal, Orbiter backroom." }, r: ["Relationship rewards"] },
+  { id: "d15", t: "Grandmother's Blessing", opt: true, d: "MR30+: grant a relay-wide boost once daily.", i: { l: "Blessing altar, any relay." }, r: ["Relay boost"] },
+  { id: "d16", t: "Leon's Furniture Shop", opt: true, d: "Decor only. Zero progression.", i: { l: "Höllvania Central Mall." }, r: ["Decorations"] },
+];
+
+const weeklyItems = [
+  { id: "w1", t: "Nightwave Weeklies", d: "Several times the standing of dailies. The catch-up system means zero FOMO.", i: { a: "Push rank for slots, potatoes, Umbra Forma up the track.", l: "Nightwave console." }, r: ["NW standing", "Rank rewards"] },
+  { id: "w2", t: "Nightwave Shop", d: "Weekly cred-shop rotation, Nitain, aura mods, alt helmets.", i: { l: "Nightwave console, Cred Offerings." }, r: ["Nitain", "Aura mods"] },
+  { id: "w3", t: "Maroo's Ayatan Hunt", d: "2 minutes for a statue worth 1,500 to 2,500 Endo.", i: { a: "Socket Ayatan Stars, sell the statue back to Maroo.", l: "Maroo's Bazaar, Mars." }, r: ["1.5-2.5k Endo"] },
+  { id: "w4", t: "Clan Weekly Initiative", d: "Free loot for playing what you would play anyway.", i: { l: "Clan panel or dojo." }, r: ["Bonus rewards"] },
+  { id: "w5", t: "Paladino (Riven Slivers)", d: "Eximus enemies drop slivers everywhere, she turns them into a weekly Riven.", i: { l: "Iron Wake, Earth." }, r: ["Riven", "Kuva", "Endo"] },
+  { id: "w6", t: "Acrithis (Pathos Clamps)", d: "Priority buys: the Orokin Reactor and Catalyst. Skip her Forma and Rivens.", i: { p: "Clamps come from the Orowyrm at the end of a Duviri run.", l: "Acrithis, Duviri." }, r: ["Reactor", "Catalyst"] },
+  { id: "w7", t: "Teshin (Steel Essence)", d: "The most important vendor: 50k Kuva for 55 essence, Umbra Forma every 8 weeks.", i: { a: "Weekly: Kuva, Veiled Riven Cipher, relic packs. Watch the 8-week super-rotation.", l: "Teshin's room, any relay." }, r: ["Umbra Forma", "50k Kuva", "Relic packs"] },
+  { id: "w8", t: "Duviri Circuit", d: "SP Circuit gives 2 Incarnon adapters per week, the biggest weapon upgrades in the game.", i: { a: "Normal circuit also streamlines otherwise painful Warframe farms such as Harrow.", p: "One long run beats many short ones, reputation per stage scales. Cavalero sells the week's adapters for 120p if impatient.", l: "Star chart, Duviri, The Circuit." }, r: ["Incarnons", "Warframes"] },
+  { id: "w9", t: "Archon Hunt", d: "One guaranteed Archon Shard per week.", i: { p: "Veilbreaker quest, levels above Sortie, bring your best.", l: "Star chart, Archon Hunt panel." }, r: ["Archon Shard", "Kuva"] },
+  { id: "w10", t: "Netracells", d: "Strong shard odds per Search Pulse. Optimal week: Deep 2 + Temporal 2 + Netracell 1.", i: { p: "5 pulses per week, shared with both Archimedeas.", l: "Tagfer, Sanctum Anatomica, Deimos." }, r: ["Archon Shards", "Arcanes"] },
+  { id: "w11", t: "Elite Deep Archimedea", d: "Take all modifiers for max tier, Tau-Forged shards live here.", i: { p: "Restricted loadouts at level 300 to 500, needs a deep roster. Costs 2 pulses.", l: "Loid, Sanctum Anatomica." }, r: ["Tau-Forged Shards", "Rare Arcanes"] },
+  { id: "w12", t: "Temporal Archimedea", d: "The Höllvania twin. Same pulses, same shard payouts.", i: { l: "Kaya Velasco, Höllvania mall." }, r: ["Archon Shards", "Arcanes"] },
+  { id: "w13", t: "KIM Calendar Challenges", d: "Trivial Höllvania tasks paying Catalysts, Rivens, sometimes Shards.", i: { l: "Calendar on the KIM terminal." }, r: ["Potatoes", "Rivens", "Shards"] },
+  { id: "w14", t: "Bird 3, Weekly Arcane", d: "A rare Arcane for Cavia standing you accrue anyway.", i: { l: "Bird 3, Sanctum Anatomica." }, r: ["Rare Arcane"] },
+  { id: "w15", t: "Secondary Syndicates", opt: true, d: "Quills, Vox Solaris, Necraloid, dedicated pushes, not weekly chores.", i: { a: "They gate Operator amps and Necramech gear.", l: "Cetus backroom, Fortuna backroom, Necralisk." }, r: ["Amps", "Necramech"] },
+  { id: "w16", t: "Kaya Velasco Arcanes", opt: true, d: "Pic Chips buy rare Arcanes. Debatable value.", i: { l: "Höllvania mall." }, r: ["Arcanes"] },
+  { id: "w17", t: "Archimedean Yonta", opt: true, d: "5 Void Plume Pinions for 35k Kuva, if you have spares.", i: { l: "Chrysalith, the Zariman." }, r: ["35k Kuva"] },
+  { id: "w18", t: "Disruption", opt: true, d: "Check the weekly pool, run only if something you need shows up.", i: { l: "Its own star-chart panel post-quest." }, r: ["Rotating rewards"] },
+];
+
+/* Baro and Prime Resurgence rotation anchors, sourced live (see chat).
+   Baro: appears every 14 days for a 48h window. Anchor: arrived 2026-06-26 (Orcus Relay).
+   Varzia/Prime Resurgence: current rotation ends 2026-07-10 04:00 UTC (Jul 9 11PM ET), then rotates every 28 days. */
+const BARO_CYCLE = 14 * 86400000;
+const BARO_VISIT = 48 * 3600000;
+const BARO_ANCHOR_ARRIVAL = Date.UTC(2026, 5, 26, 17, 0, 0);
+const VARZIA_CYCLE = 28 * 86400000;
+const VARZIA_ANCHOR_END = Date.UTC(2026, 6, 10, 3, 0, 0);
+
+function baroStatus(now) {
+  const sinceAnchor = now - BARO_ANCHOR_ARRIVAL;
+  const cyclePos = ((sinceAnchor % BARO_CYCLE) + BARO_CYCLE) % BARO_CYCLE;
+  if (cyclePos < BARO_VISIT) {
+    return { active: true, msLeft: BARO_VISIT - cyclePos };
+  }
+  return { active: false, msLeft: BARO_CYCLE - cyclePos };
+}
+function varziaStatus(now) {
+  const sinceEnd = now - VARZIA_ANCHOR_END;
+  const cyclePos = ((sinceEnd % VARZIA_CYCLE) + VARZIA_CYCLE) % VARZIA_CYCLE;
+  return { msLeft: VARZIA_CYCLE - cyclePos };
+}
+
+const specialItems = [
+  { id: "s1", t: "Ergo Glast", vendor: "ergo", d: "Tenet melee and spearguns, 40 Corrupted Holokeys each. Bonus element and percentage reroll every rotation.", i: { a: "Buy when a good element or high percentage rolls, skips the whole Sisters grind for these weapons.", p: "Holokeys drop from Sisters of Parvos and Railjack Void Storms. One copy per weapon per rotation.", l: "Perrin Sequence room, any relay." }, r: ["Tenet weapons"] },
+  { id: "s2", t: "Eleanor Nightingale", vendor: "eleanor", d: "Coda infested lich weapons in alternating batches A and B, fresh bonuses each cycle.", i: { p: "Needs the adversary system, not synced with Ergo's clock.", l: "Höllvania Central Mall." }, r: ["Coda weapons"] },
+  { id: "s3", t: "Baro Ki'Teer", vendor: "baro", d: "Void trader, every two weeks for a 48-hour window. Primed mods are long-term must-haves.", i: { p: "Convert spare Prime parts to Ducats at a relay kiosk beforehand. Inbox tells you where he lands.", l: "A rotating relay." }, r: ["Primed mods", "Exclusives"] },
+  { id: "s4", t: "Prime Resurgence", vendor: "varzia", d: "Roughly monthly unvaulting, the only way to target retired Primes.", i: { p: "Pay with Aya from bounties and missions.", l: "Varzia, inside Maroo's Bazaar, Mars." }, r: ["Vaulted Prime relics"] },
+];
+
+const watchItems = [
+  "Fomorian and Razorback invasions: appear every few weeks, pays an Orokin Reactor or Catalyst.",
+  "Ghoul Purge (Plains): the Hunter mod set.",
+  "Thermia Fractures (Orb Vallis): Amalgam mods, untradeable, must be played yourself.",
+  "Gift of the Lotus: devstream (last Friday monthly) and event alerts. Often the best free handouts, sometimes Tau-Forged shards.",
+];
+
+/* ============================================================
+   RETURN PATH DATA
+   ============================================================ */
+const pathPhases = [
+  {
+    key: "p1", label: "P1", title: "Phase 1: Foundations",
+    sub: "The first days. Everything here compounds, start it all now.",
+    steps: [
+      { id: "p1s1", t: "Vor's Prize and The Teacher", d: "Unlock your ship segments and the modding tutorial, with a free weapon included.", i: { a: "Segments such as the Foundry, the Mod station, and the Market gate everything else in the game.", f: "Do not linger, these are speed-runnable." } },
+      { id: "p1s2", t: "Chase junctions, not planets", d: "Junctions gate quests and systems. Only clear the nodes each junction actually asks for.", i: { f: "Public squads and taxi invites skip difficulty walls entirely.", l: "Junction nodes between planets on the star chart." } },
+      { id: "p1s3", t: "Learn modding immediately", d: "Power comes from ranked mods, not levels. This is the number one new-player trap.", i: { a: "Rank Serration, Pressure Point, and Vitality-class mods first.", f: "The weekly Ayatan Hunt in the Routine tab is your early Endo faucet." } },
+      { id: "p1s4", t: "Build Rhino", d: "The tank that carries you through the entire star chart.", i: { f: "Parts drop from the Jackal, craft while you keep pushing.", l: "Fossa, Venus, boss node." } },
+      { id: "p1s5", t: "Switch on the passive engines", d: "Nightwave, syndicate pledges, daily first-win, foundry, from day one.", i: { a: "Slots, potatoes, and standing accrue while you do everything else. See the Routine tab, that is the engine room." } },
+      { id: "p1s6", t: "Join a clan", d: "Dojo research means a massive weapon catalog, Dragon Keys, and a trading post.", i: { f: "Any active clan with completed research, recruit chat or the forums." } },
+    ],
+  },
+  {
+    key: "p2", label: "P2", title: "Phase 2: Systems Online",
+    sub: "Mid star chart. Build the account infrastructure the endgame runs on.",
+    steps: [
+      { id: "p2s1", t: "Clear the whole star chart", d: "Every node once, this unlocks Sorties, Arbitrations, and later Steel Path.", i: { f: "Do it alongside the quest spine, not before it." } },
+      { id: "p2s2", t: "Set up an affinity loop", d: "Level gear fast to feed Mastery Rank.", i: { f: "Public defense or survival at Helene or Hydron, one strong DPS carries the lobby.", l: "Helene, Saturn, or Hydron, Sedna." } },
+      { id: "p2s3", t: "Push Mastery Rank deliberately", d: "MR raises daily standing caps, void trace caps, riven slots, and weapon gates.", i: { f: "Level every weapon once, including cheap dojo research weapons, then sell them." } },
+      { id: "p2s4", t: "Potato and Forma your mains", d: "A Reactor or Catalyst doubles mod capacity, the single biggest per-item power jump.", i: { f: "Free potatoes: Nightwave track, Fomorian and Razorback invasions, KIM calendar, Acrithis weekly." } },
+      { id: "p2s5", t: "Open-world on-ramp", d: "Cetus, then Fortuna, then Deimos bounties: Endo, Aya, and Blood Rush plus Weeping Wounds.", i: { a: "Those two Deimos mods define every melee build you will ever make.", l: "Bounty boards, Cetus, Fortuna, Necralisk." } },
+      { id: "p2s6", t: "Start the relic economy", d: "Crack relics in full squads, four rolls, pick any. Prime parts equal plat and Ducats.", i: { f: "Details and ranked nodes are in the Farms tab under Relics." } },
+    ],
+  },
+  {
+    key: "p3", label: "P3", title: "Phase 3: The Quest Spine",
+    sub: "The fastest route to modern content, in order. MR gates were removed, only prerequisites block you.",
+    steps: [
+      { id: "p3s1", t: "The Second Dream, then The War Within", d: "Unlocks the Operator, Focus schools, Sorties, and Kuva.", i: { f: "Do them the moment the star chart allows, everything modern descends from here." } },
+      { id: "p3s2", t: "Chains of Harrow, Apostasy, The Sacrifice", d: "The story spine continues, The Sacrifice hands you Excalibur Umbra.", i: {} },
+      { id: "p3s3", t: "Necramech and Railjack detour", d: "Heart of Deimos ranks Entrati toward a Necramech, and Rising Tide builds the Railjack.", i: { a: "Both are hard requirements for The New War.", f: "Minimum-viable versions are fine, do not over-invest yet.", l: "Necralisk, Deimos, or the dojo Dry Dock." } },
+      { id: "p3s4", t: "The New War", d: "The long solo cinematic centerpiece. Gates all current content.", i: { f: "Block out an evening, you cannot change loadout mid-quest, prep beforehand." } },
+      { id: "p3s5", t: "Angels of the Zariman, The Duviri Paradox", d: "Zariman hub for Arcanes and the Focus economy, and Duviri for the Circuit to Incarnons.", i: { a: "Duviri is a hard requirement for everything after Lotus Eaters.", l: "The Chrysalith, or Duviri." } },
+      { id: "p3s6", t: "Whispers in the Walls", d: "Unlocks the Sanctum Anatomica: Netracells, Archimedea, Cavia. The endgame nexus.", i: { l: "Sanctum Anatomica, Deimos." } },
+      { id: "p3s7", t: "The Lotus Eaters, then The Hex", d: "Opens 1999: Höllvania, KIM, Coda adversaries, Techrot Safes, Temporal Archimedea.", i: { l: "Höllvania, via the star chart." } },
+      { id: "p3s8", t: "The Old Peace", d: "Unlocks the Dark Refractory: Descendia and Perita Rebellion. Current end of the spine.", i: { a: "Jade Shadows is a side story, slot it whenever.", l: "Dark Refractory, navigation console." } },
+    ],
+  },
+  {
+    key: "p4", label: "P4", title: "Phase 4: Power Systems",
+    sub: "Post-spine. Convert access into raw account power.",
+    steps: [
+      { id: "p4s1", t: "Unlock the Helminth", d: "Subsume staple abilities such as Roar and Pillage onto any Warframe you own.", i: { f: "Railjack resources are perfect free Helminth food.", l: "Rank Entrati, buy the segment, Necralisk, Deimos." } },
+      { id: "p4s2", t: "Clear Steel Path", d: "Opens the Essence economy: daily Incursions plus Teshin's shop, Umbra Forma, 50k Kuva.", i: { f: "You do not need to full-clear immediately, unlock it, then chip Incursions daily." } },
+      { id: "p4s3", t: "Start the Incarnon engine", d: "2 adapters per week from SP Circuit, start with the meta picks: Torid, Dual Toxocyst, and Ceramic Dagger.", i: { l: "Duviri, The Circuit, Steel Path." } },
+      { id: "p4s4", t: "Galvanized mods and Arcanes", d: "Vitus from Arbitrations, Arcanes via SP Void Cascade. Late-game builds are built on these.", i: { l: "Arbitration node (hourly), or Void Cascade, Zariman." } },
+      { id: "p4s5", t: "Run adversaries", d: "Kuva Lich, Sister, and Coda weapons: big MR and real power.", i: { f: "The Ergo Glast and Eleanor timers, in Routine, Timers, let you buy good rolls instead of grinding bad RNG." } },
+      { id: "p4s6", t: "Ignite the shard engine", d: "Archon Hunt weekly, then graduate to Netracells plus both Archimedeas, 2 plus 2 plus 1 pulses.", i: { a: "Shards are the permanent, weekly-capped stat layer, missed weeks never come back." } },
+    ],
+  },
+  {
+    key: "p5", label: "P5", title: "Phase 5: The Endgame Loop",
+    sub: "The steady state. Your week runs itself from the Routine tab.",
+    steps: [
+      { id: "p5s1", t: "Lock the weekly core", d: "EDA plus TA plus 1 Netracell, Archon Hunt, Circuit picks, Teshin and Acrithis buys, Descendia.", i: { f: "That is the entire mandatory week, everything else is choice." } },
+      { id: "p5s2", t: "Run the money engines", d: "Höllvania, SP Void Cascade, and relic radshares fund your plat and Arcanes.", i: { f: "Ranked with locations in the Farms tab." } },
+      { id: "p5s3", t: "Build roster breadth", d: "Archimedea restricts loadouts, every built frame or weapon is a free reward tier.", i: { f: "Incarnons and Circuit frames are the cheapest breadth per week." } },
+      { id: "p5s4", t: "Spend the power", d: "Shards into your mains, Arcanes maxed, Umbra Forma only on frames you love.", i: {} },
+    ],
+  },
+];
+
+/* ============================================================
+   FARM DATA
+   ============================================================ */
+const farmDB = {
+  vodyanoi: { t: "Vodyanoi Endo Rush", rt: false, i: { w: "Grineer arena exploited as the ultimate Endo printer: 2 to 4k per sub-2-minute round.", p: "Steel Path plus mod drop booster, premade two Nekros, one Nidus, one Khora. Very sweaty.", l: "Vodyanoi, Sedna, Steel Path." }, r: ["2-4k Endo / 2min"] },
+  arbitrations: { t: "Arbitrations", rt: false, i: { w: "Hourly elite endless, one life. The only Vitus Essence source, leading to Galvanized mods.", p: "Needs the full star chart cleared. Kill Arbitration Drones on sight, a retriever companion and relay blessing boost yields.", l: "Rotating Arbitration node, star chart." }, r: ["Galvanized", "Endo", "Ayatans"] },
+  ayatanHunt: { t: "Maroo's Ayatan Hunt", rt: true, i: { w: "Guaranteed weekly statue for a 2-minute run: 1.5 to 2.5k Endo after socketing stars.", l: "Maroo's Bazaar, Mars." }, r: ["1.5-2.5k Endo"] },
+  potency: { t: "Höllvania Potency Mods", rt: false, i: { w: "Parazon mods raining from Techrot enemies, used-up copies dissolve into hefty Endo, passively.", l: "Techrot missions, Höllvania." }, r: ["Endo passive"] },
+  owBounties: { t: "Open World Bounties", rt: false, i: { w: "Endo in nearly every pool, Deimos level 40 to 60 drops 1,000-Endo rewards, plus Aya and exclusive sets: Vigilante, Augur, Hunter, and Blood Rush with Weeping Wounds.", l: "Cetus (Earth), Fortuna (Venus), Necralisk (Deimos)." }, r: ["Endo", "Aya", "Blood Rush"] },
+  hubBounties: { t: "Hub Bounties", rt: false, i: { w: "Denser pools than open worlds: thousands of Endo, Aya, Focus Lenses, Arcanes, plus hub shop currencies.", p: "Angels of the Zariman or Whispers in the Walls quests.", l: "Chrysalith (Zariman), Sanctum Anatomica (Deimos)." }, r: ["Endo", "Arcanes", "Lenses"] },
+  railjack: { t: "Railjack", rt: false, i: { w: "Four farms in one: 100k+ credits on late nodes, scrapped parts into Endo, free Helminth food, Void Storms crack relics mid-mission.", p: "Rising Tide quest, Ticker's crew makes solo trivial.", l: "Proxima nodes, star chart, or dojo Dry Dock." }, r: ["Credits", "Endo", "Relics"] },
+  sortie: { t: "Daily Sortie", rt: true, i: { w: "The daily 25 percent Riven roll plus Kuva, Endo, and Ayatans, outpaces most grinds over time.", l: "Star chart, Sortie panel." }, r: ["Riven 25%", "Kuva"] },
+  techrotSafe: { t: "Höllvania Techrot Safes", rt: false, i: { w: "Purple-marked safes dropping a base 100k credits, stacking with Effigy, blessing, booster, and retriever toward 800k per safe.", p: "Run during a Shell Cracker bounty, safe guaranteed and marked. Orokin Eye air support highlights the key.", l: "Techrot missions, Höllvania." }, r: ["100k-800k / safe"] },
+  profitTaker: { t: "Profit-Taker", rt: false, i: { w: "Orb Mother raid paying about 1M credits in minutes for optimized squads.", p: "Max Vox Solaris plus a Chroma Effigy setup plus practice. Elite but optional now.", l: "Heist, Fortuna backroom, Orb Vallis." }, r: ["~1M Credits"] },
+  index: { t: "The Index", rt: false, i: { w: "Wager arena: about 250k per easy 5 to 10 minute run, 500k boosted.", p: "Bring something tanky, Rhino works.", l: "The Index, Neptune." }, r: ["250-500k / run"] },
+  darkSector: { t: "Dark Sector First Win", rt: true, i: { w: "The daily 2x-credit first win pointed at a 20 to 30k node equals about 50k for 5 minutes.", l: "Dark Sector nodes, 1 to 2 per planet." }, r: ["~50k / day"] },
+  voidCaptures: { t: "Void Captures", rt: false, i: { w: "Hepit: a Lith relic in under 2 minutes, nearly every run. Ukko: Meso and Neo. The fastest relic pile-builder.", p: "Crack in full squads for 4 rolls, radshare identical Radiant relics for rares.", l: "Hepit and Ukko, the Void." }, r: ["Lith/Meso/Neo relics"] },
+  apollo: { t: "Apollo (Disruption)", rt: false, i: { w: "The Neo and Axi specialist, Axi has no faster home.", l: "Apollo, Lua." }, r: ["Neo/Axi relics"] },
+  olympus: { t: "Olympus (Disruption)", rt: false, i: { w: "Lith on rotations A and B at disruption pacing.", l: "Olympus, Mars." }, r: ["Lith relics"] },
+  ayaFarm: { t: "Aya to Varzia Relics", rt: false, i: { w: "Aya buys specific unvaulted relics, the only targeted Prime farm.", l: "Earn from bounties, spend at Varzia, Maroo's Bazaar." }, r: ["Targeted relics"] },
+  syndicatePacks: { t: "Syndicate Relic Packs", rt: true, i: { w: "3 relics per pack from standing that accrues passively. Always be collecting.", l: "Syndicate offerings, Orbiter console." }, r: ["3 relics / pack"] },
+  voidCascade: { t: "SP Void Cascade", rt: false, i: { w: "Thrax spawns scale with time, each dropping Arcanes, dissolve at Loid into Vosfor, then relic packs. Acolytes add Steel Essence, Omni Fissures crack any relic tier simultaneously.", p: "Skip normal mode, the loot lives in Steel Path.", l: "Void Cascade, Zariman, SP. Dissolve at Loid, Sanctum." }, r: ["Arcanes", "Vosfor", "Essence"] },
+  descendia: { t: "The Descendia", rt: false, i: { w: "Weekly 21-floor gauntlet, about 30 minutes, checkpoints 7, 14, 21: rare Arcanes at floors 6, 13, 20, occasional Shards and Omni Forma, Uriel parts from Roathe on floor 21, repeatable, plus Maphica currency.", p: "The Old Peace quest. Check both normal and SP pools. Max-range Limbo or Xaku pops every container.", l: "Dark Refractory, navigation console." }, r: ["Arcanes", "Uriel", "Maphica"] },
+  eidolons: { t: "Eidolon Hunts", rt: false, i: { w: "Night-cycle boss hunts paying the classic Arcanes, Grace and Energize, serious plat value.", p: "Built amp plus squad role plus practice. High skill floor, no longer mandatory.", l: "Plains of Eidolon at night, Cetus." }, r: ["Eidolon Arcanes", "Plat"] },
+  archimedea: { t: "Deep and Temporal Archimedea", rt: true, i: { w: "Weekly elite trials, restricted loadouts, level 300 to 500. Take all modifiers for max tier: multi-shard payouts including Tau-Forged.", p: "2 pulses each of the weekly 5, shared with Netracells, so 2 plus 2 plus 1.", l: "Loid (Sanctum), Kaya Velasco (Höllvania mall)." }, r: ["Tau-Forged Shards", "Arcanes"] },
+  netracells: { t: "Netracells", rt: true, i: { w: "Strong shard odds per pulse, the farm for everyone below Archimedea power.", l: "Tagfer, Sanctum Anatomica." }, r: ["Shards", "Arcanes"] },
+  archonHunt: { t: "Archon Hunt", rt: true, i: { w: "One guaranteed weekly shard from the moment you unlock it.", p: "Veilbreaker quest.", l: "Star chart, Archon Hunt panel." }, r: ["1 guaranteed Shard"] },
+  kimCalendar: { t: "KIM Calendar", rt: true, i: { w: "Trivial Höllvania challenges paying Catalysts, Rivens, sometimes Shards.", l: "KIM terminal, Orbiter backroom." }, r: ["Potatoes", "Rivens"] },
+  corruptedVaults: { t: "Corrupted Mod Vaults", rt: false, i: { w: "One guaranteed corrupted mod per Dragon Key run, staples such as Blind Rage and Transient Fortitude, duplicates sell for plat.", p: "Craft Dragon Keys from clan dojo Orokin Lab, capture missions are fastest.", l: "Normal Deimos star-chart missions, not the open world." }, r: ["Corrupted mods", "Plat"] },
+  weeklyVendors: { t: "Weekly Riven Vendors", rt: true, i: { w: "Paladino (slivers to Riven), Teshin (Rivens plus cipher), Acrithis (Duviri Rivens), passive accumulation.", l: "Iron Wake, any relay, or Duviri." }, r: ["Rivens", "Ciphers"] },
+  circuit: { t: "Duviri Circuit", rt: true, i: { w: "Normal circuit streamlines otherwise painful Warframes such as Harrow. SP circuit gives 2 Incarnon adapters weekly, the biggest weapon upgrades in the game.", p: "One long run beats many short ones. Cavalero sells the week's adapters for 120p.", l: "Star chart, Duviri, The Circuit." }, r: ["Incarnons", "Warframes"] },
+  syndAugments: { t: "Syndicate Augment Selling", rt: true, i: { w: "Standing into augments into plat, fully passive, forever.", l: "Syndicate offerings, sell via trade chat or warframe.market." }, r: ["Plat passive"] },
+  hollvania: { t: "Höllvania, whole city", rt: false, i: { w: "Five farms overlapping: Techrot Safes, Potency Endo, bounties, Coda weapons, KIM calendar, Temporal Archimedea.", p: "The 1999 quest line. The most bountiful zone right now.", l: "Höllvania, star chart, 1999." }, r: ["Credits", "Endo", "Coda"] },
+  nightwave: { t: "Nightwave", rt: true, i: { w: "Slots, potatoes, Umbra Forma up the track, plus creds for Nitain and auras. The broadest passive income.", l: "Nightwave console, Orbiter." }, r: ["Potatoes", "Slots", "Nitain"] },
+};
+
+const lootCategories = [
+  { key: "general", label: "General", title: "General / Multi-Loot", sub: "Maximum value per hour when you do not need one specific thing.",
+    ranks: [
+      { ref: "hollvania", note: "Five farms overlapping in one city, the current loot cave." },
+      { ref: "voidCascade", note: "Arcanes, Vosfor, Essence, and relics simultaneously, scaling with time." },
+      { ref: "railjack", note: "Credits, Endo, Helminth food, and relic cracking in one mode." },
+      { ref: "descendia", note: "One weekly 30-minute run touching Arcanes, shards, a Warframe, and a shop currency." },
+      { ref: "circuit", note: "The biggest power-per-week from any single activity." },
+      { ref: "hubBounties", note: "Reward-dense boards for low-pressure variety." },
+      { ref: "nightwave", note: "Slow but broad, potatoes, slots, and rare materials just for playing." },
+    ] },
+  { key: "endo", label: "Endo", title: "Endo", sub: "Mod-ranking fuel. You never stop needing it.",
+    ranks: [
+      { ref: "vodyanoi", note: "The throne, but sweaty and premade-only." },
+      { ref: "arbitrations", note: "80 percent of the value with 20 percent of the sweat, plus Ayatans hourly." },
+      { ref: "ayatanHunt", note: "Unbeatable Endo-per-minute for newer players." },
+      { ref: "potency", note: "Passive rain while doing Höllvania's other farms." },
+      { ref: "owBounties", note: "Deimos level 40 to 60 bounties, the mid-game stockpile." },
+      { ref: "hubBounties", note: "Thousands of Endo with zero pressure." },
+      { ref: "railjack", note: "Scrap components into Endo as a side stream." },
+      { ref: "sortie", note: "The daily drip on top of the Riven chance." },
+    ] },
+  { key: "credits", label: "Credits", title: "Credits", sub: "Ranked by payout speed, pick what your account can access.",
+    ranks: [
+      { ref: "techrotSafe", note: "The current credit king, and anyone can do it." },
+      { ref: "profitTaker", note: "About 1M in minutes, heavy setup required." },
+      { ref: "index", note: "The convenient workhorse from Neptune onward." },
+      { ref: "darkSector", note: "The best income on literal day one." },
+      { ref: "railjack", note: "100k+ per late node while farming three other things." },
+    ] },
+  { key: "relics", label: "Relics", title: "Relics and Primes", sub: "Always crack in a full squad, radshares for rares.",
+    ranks: [
+      { ref: "voidCaptures", note: "The fastest pile-builder in the game." },
+      { ref: "apollo", note: "The Neo and Axi specialist." },
+      { ref: "olympus", note: "Lith at disruption pacing." },
+      { ref: "ayaFarm", note: "The only targeted relic farm." },
+      { ref: "syndicatePacks", note: "Free relics from passive standing." },
+      { ref: "voidCascade", note: "Vosfor packs plus Omni Fissures while farming Arcanes." },
+      { ref: "railjack", note: "Void Storms crack relics mid-mission." },
+    ] },
+  { key: "arcanes", label: "Arcanes", title: "Arcanes", sub: "Endgame passive power, and a top Platinum market.",
+    ranks: [
+      { ref: "voidCascade", note: "The definitive Arcane farm, scales with mission time." },
+      { ref: "descendia", note: "Rare Arcanes guaranteed at floors 6, 13, and 20 weekly." },
+      { ref: "hubBounties", note: "Arcane-stuffed pools with zero mechanical demands." },
+      { ref: "eidolons", note: "The classics, high value, high skill floor." },
+      { ref: "archimedea", note: "Rare Arcanes ride along with the shards." },
+      { ref: "netracells", note: "Side-drops on every pulse." },
+    ] },
+  { key: "shards", label: "Archon Shards", title: "Archon Shards", sub: "Permanent, untradeable, weekly-capped. Optimal week: Deep 2 + Temporal 2 + Netracell 1.",
+    ranks: [
+      { ref: "archimedea", note: "Best odds including Tau-Forged, if you can survive it." },
+      { ref: "netracells", note: "The reliable pulse-spender below Archimedea power." },
+      { ref: "archonHunt", note: "One guaranteed shard weekly." },
+      { ref: "kimCalendar", note: "Occasional shards for trivial challenges." },
+      { ref: "descendia", note: "Bonus shards in the weekly floor pools." },
+    ] },
+  { key: "mods", label: "Mods & Rivens", title: "Mods, Rivens, and Upgrades", sub: "The build-defining drops.",
+    ranks: [
+      { ref: "corruptedVaults", note: "On every serious build, guaranteed per run, sellable." },
+      { ref: "arbitrations", note: "Galvanized mods, no other source." },
+      { ref: "owBounties", note: "Blood Rush plus Weeping Wounds. Melee lives here." },
+      { ref: "circuit", note: "Incarnons, the biggest weapon upgrades, period." },
+      { ref: "sortie", note: "Your steadiest Riven pipeline." },
+      { ref: "weeklyVendors", note: "Passive weekly Riven accumulation." },
+    ] },
+  { key: "plat", label: "Platinum", title: "Platinum, trading income", sub: "Farm what players want, then sell. Ranked by consistency.",
+    ranks: [
+      { ref: "voidCaptures", note: "Prime parts, the backbone of the player economy." },
+      { ref: "corruptedVaults", note: "Duplicates sell forever." },
+      { ref: "syndAugments", note: "Fully passive income while you play anything." },
+      { ref: "voidCascade", note: "Vosfor into packs into parts, or sell the rare Arcanes." },
+      { ref: "sortie", note: "One good Riven roll can outearn a week of parts." },
+      { ref: "eidolons", note: "Energize-tier value, if you can farm them." },
+    ] },
+];
+
+/* ============================================================
+   TIME HELPERS
+   ============================================================ */
+
+
+/* ============================================================
+   TIME HELPERS
+   ============================================================ */
+function dailyBoundaryKey(d){ return d.toISOString().slice(0,10); }
+function mondayOf(d){
+  const day = d.getUTCDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()+diff)).toISOString().slice(0,10);
+}
+function nextDailyReset(now){ return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()+1)); }
+function nextWeeklyReset(now){
+  const day = now.getUTCDay();
+  const daysUntilMonday = (8 - day) % 7 || 7;
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()+daysUntilMonday));
+}
+function fmtDur(ms){
+  let s = Math.floor(ms/1000);
+  const d = Math.floor(s/86400); s -= d*86400;
+  const h = Math.floor(s/3600); s -= h*3600;
+  const m = Math.floor(s/60); s -= m*60;
+  const pad = n => String(n).padStart(2,"0");
+  return d>0 ? (d+"d "+pad(h)+":"+pad(m)+":"+pad(s)) : (pad(h)+":"+pad(m)+":"+pad(s));
+}
+function cycleMs(now, cycle, epoch){
+  const elapsed = now - epoch;
+  const into = ((elapsed % cycle) + cycle) % cycle;
+  return cycle - into;
+}
+function cyclePct(now, cycle, epoch){ return 100 - (cycleMs(now,cycle,epoch)/cycle)*100; }
+function eleanorBatch(now){
+  const elapsed = now - ELEANOR_EPOCH;
+  const cycles = Math.floor(elapsed / (4*86400000));
+  return cycles % 2 === 0 ? "A" : "B";
+}
+function baroStatus(now){
+  const sinceAnchor = now - BARO_ANCHOR_ARRIVAL;
+  const cyclePos = ((sinceAnchor % BARO_CYCLE) + BARO_CYCLE) % BARO_CYCLE;
+  if(cyclePos < BARO_VISIT) return { active:true, msLeft: BARO_VISIT - cyclePos };
+  return { active:false, msLeft: BARO_CYCLE - cyclePos };
+}
+function varziaStatus(now){
+  const sinceEnd = now - VARZIA_ANCHOR_END;
+  const cyclePos = ((sinceEnd % VARZIA_CYCLE) + VARZIA_CYCLE) % VARZIA_CYCLE;
+  return { msLeft: VARZIA_CYCLE - cyclePos };
+}
+
+/* ============================================================
+   GLOSSARY LINKING
+   ============================================================ */
+function linkTerms(str){
+  if(!str) return "";
+  let segments = [{type:"text", value:str}];
+  for(const g of GLOSS_ORDER){
+    const next = [];
+    let matched = false;
+    for(const seg of segments){
+      if(matched || seg.type !== "text"){ next.push(seg); continue; }
+      const m = seg.value.match(g.re);
+      if(!m){ next.push(seg); continue; }
+      matched = true;
+      const before = seg.value.slice(0, m.index);
+      const term = m[0];
+      const after = seg.value.slice(m.index + term.length);
+      if(before) next.push({type:"text", value:before});
+      next.push({type:"term", value:term, key:g.key});
+      if(after) next.push({type:"text", value:after});
+    }
+    segments = next;
+  }
+  return segments.map(seg=>{
+    if(seg.type==="term"){
+      return '<span class="gl" data-g="'+seg.key+'" style="color:'+C.green+';border-bottom:1px dotted '+C.green+';cursor:help;">'+seg.value+'</span>';
+    }
+    return seg.value;
+  }).join("");
+}
+
+/* ============================================================
+   STATE (localStorage — fully offline, no server needed)
+   ============================================================ */
+function loadJSON(key, fallback){
+  try{ const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }catch(e){ return fallback; }
+}
+function saveJSON(key, val){
+  try{ localStorage.setItem(key, JSON.stringify(val)); }catch(e){}
+}
+
+let dailyState = loadJSON("wf-daily-state", { resetKey:null, done:{} });
+let weeklyState = loadJSON("wf-weekly-state", { resetKey:null, done:{} });
+let pathState = loadJSON("wf-path-state", { done:{} });
+let showOptional = loadJSON("wf-optional-toggle", false);
+let expanded = {};
+let glossKey = null;
+let tab = "routine";
+let routineFilter = "daily";
+let pathFilter = "all";
+let farmFilter = "all";
+
+(function normalizeResets(){
+  const n = new Date();
+  const dKey = dailyBoundaryKey(n);
+  if(dailyState.resetKey !== dKey){ dailyState = {resetKey:dKey, done:{}}; saveJSON("wf-daily-state", dailyState); }
+  const wKey = mondayOf(n);
+  if(weeklyState.resetKey !== wKey){ weeklyState = {resetKey:wKey, done:{}}; saveJSON("wf-weekly-state", weeklyState); }
+})();
+
+function toggleDaily(id){ dailyState.done[id] = !dailyState.done[id]; saveJSON("wf-daily-state", dailyState); render(); }
+function toggleWeekly(id){ weeklyState.done[id] = !weeklyState.done[id]; saveJSON("wf-weekly-state", weeklyState); render(); }
+function togglePath(id){ pathState.done[id] = !pathState.done[id]; saveJSON("wf-path-state", pathState); render(); }
+function toggleExpand(id){ expanded[id] = !expanded[id]; render(); }
+function openGloss(key){ glossKey = key; render(); }
+function closeGloss(){ glossKey = null; render(); }
+function setTab(t){ tab = t; render(); }
+function setRoutineFilter(f){ routineFilter = f; render(); }
+function setPathFilter(f){ pathFilter = f; render(); }
+function setFarmFilter(f){ farmFilter = f; render(); }
+function toggleOptional(){ showOptional = !showOptional; saveJSON("wf-optional-toggle", showOptional); render(); }
+
+/* ============================================================
+   SMALL HTML BUILDERS
+   ============================================================ */
+function progressBarHTML(pct, color){
+  return '<div style="height:8px;background:#0a0b0d;border-radius:4px;overflow:hidden;"><div style="height:100%;border-radius:4px;background:'+color+';width:'+pct+'%;transition:width .3s ease;"></div></div>';
+}
+function overviewRowHTML(label, color, pct, n){
+  return '<div style="display:flex;align-items:center;gap:10px;">'
+    +'<span style="flex-shrink:0;width:60px;font-family:\'JetBrains Mono\',monospace;font-size:9.5px;letter-spacing:0.12em;text-transform:uppercase;color:'+color+';">'+label+'</span>'
+    +'<div style="flex:1;">'+progressBarHTML(pct, color)+'</div>'
+    +'<span style="flex-shrink:0;min-width:52px;text-align:right;font-family:\'JetBrains Mono\',monospace;font-size:10.5px;color:'+C.muted+';">'+n+'</span></div>';
+}
+function chipHTML(key, label, active, activeColor, activeText, handler){
+  return '<div onclick="'+handler+"('"+key+"')"+'" style="font-family:\'JetBrains Mono\',monospace;font-size:10.5px;letter-spacing:0.06em;padding:7px 12px;border-radius:6px;cursor:pointer;user-select:none;text-transform:uppercase;'
+    +'border:1px solid '+(active?activeColor:C.line)+';background:'+(active?activeColor:C.panel)+';color:'+(active?activeText:C.muted)+';">'+label+'</div>';
+}
+function lootRowHTML(r){
+  if(!r || !r.length) return "";
+  return '<div style="display:flex;justify-content:flex-end;align-items:center;gap:6px;flex-wrap:wrap;margin-top:10px;">'
+    +'<span style="font-family:\'JetBrains Mono\',monospace;font-size:8.5px;letter-spacing:0.12em;color:#7a6d3a;text-transform:uppercase;margin-right:2px;">Loot</span>'
+    +r.map(x=>'<span style="font-family:\'JetBrains Mono\',monospace;font-size:10px;color:'+C.yellow+';border:1px solid rgba(250,204,21,0.3);background:rgba(250,204,21,0.08);border-radius:4px;padding:2px 7px;white-space:nowrap;">'+x+'</span>').join("")
+    +'</div>';
+}
+function infoRowsHTML(info, pathMode){
+  if(!info) return "";
+  const rows = [];
+  if(info.w) rows.push(["What", C.green, info.w]);
+  if(info.a) rows.push([pathMode?"Why":"Aim", C.yellow, info.a]);
+  if(info.p) rows.push(["Prep", C.orange, info.p]);
+  if(info.f) rows.push(["Fast", C.sky, info.f]);
+  if(info.l) rows.push(["Where", C.purple, info.l]);
+  if(!rows.length) return "";
+  return '<div style="margin-top:10px;background:'+C.panel2+';border:1px solid '+C.line+';border-radius:6px;padding:0 12px;">'
+    +rows.map(([label,color,text],i)=>'<div style="display:flex;gap:12px;padding:8px 0;font-size:12.5px;line-height:1.6;color:'+C.body+';'+(i<rows.length-1?('border-bottom:1px solid '+C.lineSoft+';'):"")+'">'
+      +'<span style="flex-shrink:0;width:50px;font-family:\'JetBrains Mono\',monospace;font-size:9px;letter-spacing:0.1em;padding-top:3px;text-transform:uppercase;color:'+color+';">'+label+'</span>'
+      +'<span>'+linkTerms(text)+'</span></div>').join("")
+    +'</div>';
+}
+function cardOpen(done, optional){
+  return '<div style="background:'+C.panel+';border:1px solid '+C.line+';border-style:'+(optional?"dashed":"solid")+';border-radius:8px;padding:14px 16px 12px;display:flex;gap:12px;align-items:flex-start;opacity:'+(done?0.5:1)+';">';
+}
+function checkboxHTML(checked, color, onclick){
+  return '<div onclick="'+onclick+'" style="flex-shrink:0;width:20px;height:20px;margin-top:2px;border-radius:5px;cursor:pointer;position:relative;'
+    +'border:2px solid '+(checked?color:C.muted)+';background:'+(checked?color:"transparent")+';">'
+    +(checked?'<svg style="position:absolute;inset:0;margin:auto;" width="11" height="9" viewBox="0 0 11 9"><path d="M1 4.5L4 7.5L10 1" stroke="#14161a" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>':"")
+    +'</div>';
+}
+function rankHTML(n, ember){
+  const color = ember ? C.sky : C.yellow;
+  return '<div style="flex-shrink:0;width:30px;height:30px;margin-top:2px;border-radius:6px;border:1px solid '+color+'55;background:'+color+'14;display:flex;align-items:center;justify-content:center;font-family:\'JetBrains Mono\',monospace;font-size:12.5px;color:'+color+';">'+String(n).padStart(2,"0")+'</div>';
+}
+function vendorBarHTML(label, pct, active){
+  const color = active ? C.green : C.sky;
+  return '<div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap;">'
+    +'<div style="flex:1;min-width:110px;height:6px;background:#0a0b0d;border-radius:3px;overflow:hidden;">'
+    +'<div style="height:100%;border-radius:3px;background:'+color+';width:'+Math.max(0,Math.min(100,pct))+'%;transition:width .3s ease;"></div></div>'
+    +'<span style="font-family:\'JetBrains Mono\',monospace;font-size:12px;color:'+color+';white-space:nowrap;">'+label+'</span></div>';
+}
+
+/* ============================================================
+   ROUTINE TAB
+   ============================================================ */
+function renderRoutineTab(){
+  const chips = [["daily","Daily"],["weekly","Weekly"],["timers","Vendor Timers"]];
+  let html = '<div style="display:flex;gap:6px;flex-wrap:wrap;padding:10px 0 12px;position:sticky;top:0;z-index:10;background:linear-gradient(to bottom, '+C.bg+' 78%, transparent);">'
+    +chips.map(([k,l])=>chipHTML(k,l,routineFilter===k,C.green,"#0e1a12","setRoutineFilter")).join("")
+    +'</div>';
+
+  if(routineFilter !== "timers"){
+    const items = routineFilter==="daily" ? dailyItems : weeklyItems;
+    const state = routineFilter==="daily" ? dailyState : weeklyState;
+    const toggleFn = routineFilter==="daily" ? "toggleDaily" : "toggleWeekly";
+    const checkColor = routineFilter==="daily" ? C.green : C.yellow;
+    const visible = items.filter(i=>!i.opt || showOptional);
+    const doneCount = visible.filter(i=>state.done[i.id]).length;
+    const pct = visible.length ? (doneCount/visible.length*100) : 0;
+    const resetMs = routineFilter==="daily" ? (nextDailyReset(new Date())-new Date()) : (nextWeeklyReset(new Date())-new Date());
+
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:12px;flex-wrap:wrap;">'
+      +'<div style="flex:1;min-width:180px;">'+progressBarHTML(pct, checkColor)
+      +'<div style="font-family:\'JetBrains Mono\',monospace;font-size:11px;color:'+C.muted+';margin-top:6px;">'
+      +'<span>'+doneCount+' / '+visible.length+' complete</span>'
+      +'<span style="margin-left:8px;color:'+checkColor+';">· resets in '+fmtDur(resetMs)+'</span></div></div>'
+      +'<div onclick="toggleOptional()" style="display:flex;align-items:center;gap:8px;font-family:\'JetBrains Mono\',monospace;font-size:10.5px;color:'+C.muted+';cursor:pointer;text-transform:uppercase;letter-spacing:0.05em;">'
+      +'<div style="width:34px;height:18px;border-radius:9px;position:relative;border:1px solid '+(showOptional?C.green:C.line)+';background:'+(showOptional?"rgba(52,211,153,0.15)":C.panel)+';">'
+      +'<div style="position:absolute;top:2px;width:12px;height:12px;border-radius:50%;transition:left .15s ease;left:'+(showOptional?"18px":"2px")+';background:'+(showOptional?C.green:C.muted)+';"></div></div>'
+      +'<span>Optional extras</span></div></div>';
+
+    html += '<div style="display:flex;flex-direction:column;gap:8px;">';
+    visible.forEach(it=>{
+      const done = !!state.done[it.id];
+      const isExp = !!expanded[it.id];
+      html += cardOpen(done, it.opt);
+      html += checkboxHTML(done, checkColor, "event.stopPropagation();"+toggleFn+"('"+it.id+"')");
+      html += '<div onclick="toggleExpand(\''+it.id+'\')" style="flex:1;cursor:pointer;min-width:0;">'
+        +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'
+        +'<div style="font-weight:600;font-size:15px;letter-spacing:-0.01em;color:'+(done?C.muted:C.text)+';text-decoration:'+(done?"line-through":"none")+';">'+it.t+'</div>'
+        +(it.opt?('<span style="font-family:\'JetBrains Mono\',monospace;font-size:9px;letter-spacing:0.08em;color:'+C.optBorder+';border:1px solid '+C.optBorder+'88;border-radius:4px;padding:1px 6px;text-transform:uppercase;">Optional</span>'):"")
+        +'<span style="margin-left:auto;color:'+C.muted+';font-size:11px;transition:transform .2s ease;transform:'+(isExp?"rotate(180deg)":"none")+';">▼</span></div>'
+        +'<div style="font-size:13px;color:#a4aab6;margin-top:4px;line-height:1.5;">'+it.d+'</div>'
+        +(isExp?infoRowsHTML(it.i):"")
+        +(isExp?lootRowHTML(it.r):"")
+        +'</div></div>';
+    });
+    html += '</div>';
+  } else {
+    const n = Date.now();
+    const baro = baroStatus(n);
+    const varzia = varziaStatus(n);
+    html += '<div style="display:flex;flex-direction:column;gap:8px;">';
+    specialItems.forEach(it=>{
+      const isExp = !!expanded[it.id];
+      html += cardOpen(false, false);
+      html += '<div onclick="toggleExpand(\''+it.id+'\')" style="flex:1;cursor:pointer;min-width:0;">'
+        +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'
+        +'<div style="font-weight:600;font-size:15px;letter-spacing:-0.01em;color:'+C.text+';">'+it.t+'</div>'
+        +'<span style="margin-left:auto;color:'+C.muted+';font-size:11px;transition:transform .2s ease;transform:'+(isExp?"rotate(180deg)":"none")+';">▼</span></div>'
+        +'<div style="font-size:13px;color:#a4aab6;margin-top:4px;line-height:1.5;">'+it.d+'</div>'
+        +(isExp?infoRowsHTML(it.i):"");
+      if(isExp && it.vendor==="ergo"){
+        html += vendorBarHTML(fmtDur(cycleMs(n,4*86400000,ERGO_EPOCH))+" until next rotation", cyclePct(n,4*86400000,ERGO_EPOCH));
+      }
+      if(isExp && it.vendor==="eleanor"){
+        html += vendorBarHTML(fmtDur(cycleMs(n,4*86400000,ELEANOR_EPOCH))+" until next rotation", cyclePct(n,4*86400000,ELEANOR_EPOCH));
+        const b = eleanorBatch(n);
+        html += '<div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;color:'+C.muted+';letter-spacing:0.06em;text-transform:uppercase;margin-top:6px;">Currently selling Batch '+b+' · Batch '+(b==="A"?"B":"A")+' next</div>';
+      }
+      if(isExp && it.vendor==="baro"){
+        const label = baro.active ? ("Active now, departs in "+fmtDur(baro.msLeft)) : ("Arrives in "+fmtDur(baro.msLeft));
+        const pctv = baro.active ? (100-(baro.msLeft/(48*3600000)*100)) : (100-(baro.msLeft/(14*86400000)*100));
+        html += vendorBarHTML(label, pctv, baro.active);
+      }
+      if(isExp && it.vendor==="varzia"){
+        html += vendorBarHTML(fmtDur(varzia.msLeft)+" until rotation changes", 100-(varzia.msLeft/(28*86400000)*100));
+      }
+      if(isExp) html += lootRowHTML(it.r);
+      html += '</div></div>';
+    });
+    html += '</div>';
+    html += '<div style="font-family:\'JetBrains Mono\',monospace;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;margin-top:24px;margin-bottom:4px;display:flex;align-items:center;gap:10px;color:'+C.muted+';">'
+      +'<span>Watch for, no fixed timer</span><span style="flex:1;height:1px;background:'+C.line+';"></span></div>'
+      +'<div style="display:flex;flex-direction:column;gap:6px;margin-top:10px;">'
+      +watchItems.map(w=>'<div style="font-size:13px;color:#a4aab6;padding:10px 14px;line-height:1.5;background:'+C.panel+';border:1px solid '+C.line+';border-radius:6px;">'+w+'</div>').join("")
+      +'</div>';
+  }
+  return html;
+}
+
+/* ============================================================
+   RETURN PATH TAB
+   ============================================================ */
+function renderPathTab(){
+  const chips = [["all","Full Path"]].concat(pathPhases.map(p=>[p.key,p.label]));
+  let html = '<div style="display:flex;gap:6px;flex-wrap:wrap;padding:10px 0 12px;position:sticky;top:0;z-index:10;background:linear-gradient(to bottom, '+C.bg+' 78%, transparent);">'
+    +chips.map(([k,l])=>chipHTML(k,l,pathFilter===k,C.sky,"#0c1622","setPathFilter")).join("")
+    +'</div>';
+  html += '<div style="font-size:12.5px;color:#a8c8e8;line-height:1.55;border:1px solid '+C.sky+'4d;border-radius:6px;background:'+C.sky+'0f;padding:11px 14px;margin-bottom:12px;">'
+    +'<b style="color:'+C.sky+';">The spine rule:</b> main quests gate systems, systems gate loot. Whenever you do not know what to do, push the next quest. Mastery Rank requirements were removed from all main story quests, so nothing but prerequisites blocks you.</div>';
+
+  pathPhases.forEach(phase=>{
+    if(pathFilter!=="all" && pathFilter!==phase.key) return;
+    html += '<div style="font-family:\'JetBrains Mono\',monospace;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;margin-top:20px;margin-bottom:4px;display:flex;align-items:center;gap:10px;color:'+C.sky+';">'
+      +'<span>'+phase.title+'</span><span style="flex:1;height:1px;background:'+C.line+';"></span></div>'
+      +'<p style="font-size:12.5px;color:'+C.muted+';margin-bottom:12px;line-height:1.5;">'+phase.sub+'</p>'
+      +'<div style="display:flex;flex-direction:column;gap:8px;">';
+    phase.steps.forEach((st, idx)=>{
+      const done = !!pathState.done[st.id];
+      const isExp = !!expanded[st.id];
+      html += cardOpen(done, false);
+      html += checkboxHTML(done, C.sky, "event.stopPropagation();togglePath('"+st.id+"')");
+      html += rankHTML(idx+1, true);
+      html += '<div onclick="toggleExpand(\''+st.id+'\')" style="flex:1;cursor:pointer;min-width:0;">'
+        +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'
+        +'<div style="font-weight:600;font-size:15px;letter-spacing:-0.01em;color:'+(done?C.muted:C.text)+';text-decoration:'+(done?"line-through":"none")+';">'+st.t+'</div>'
+        +'<span style="margin-left:auto;color:'+C.muted+';font-size:11px;transition:transform .2s ease;transform:'+(isExp?"rotate(180deg)":"none")+';">▼</span></div>'
+        +'<div style="font-size:13px;color:#a4aab6;margin-top:4px;line-height:1.5;">'+st.d+'</div>'
+        +(isExp?infoRowsHTML(st.i, true):"")
+        +'</div></div>';
+    });
+    html += '</div>';
+  });
+  return html;
+}
+
+/* ============================================================
+   FARMS TAB
+   ============================================================ */
+function renderFarmsTab(){
+  const chips = [["all","All Loot"]].concat(lootCategories.map(c=>[c.key,c.label]));
+  let html = '<div style="display:flex;gap:6px;flex-wrap:wrap;padding:10px 0 12px;position:sticky;top:0;z-index:10;background:linear-gradient(to bottom, '+C.bg+' 78%, transparent);">'
+    +chips.map(([k,l])=>chipHTML(k,l,farmFilter===k,C.yellow,"#221b04","setFarmFilter")).join("")
+    +'</div>';
+
+  lootCategories.forEach(cat=>{
+    if(farmFilter!=="all" && farmFilter!==cat.key) return;
+    html += '<div style="font-family:\'JetBrains Mono\',monospace;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;margin-top:20px;margin-bottom:4px;display:flex;align-items:center;gap:10px;color:'+C.yellow+';">'
+      +'<span>'+cat.title+'</span><span style="flex:1;height:1px;background:'+C.line+';"></span></div>'
+      +'<p style="font-size:12.5px;color:'+C.muted+';margin-bottom:12px;line-height:1.5;">'+cat.sub+'</p>'
+      +'<div style="display:flex;flex-direction:column;gap:8px;">';
+    cat.ranks.forEach((entry, idx)=>{
+      const f = farmDB[entry.ref];
+      const key = cat.key + "-" + entry.ref;
+      const isExp = !!expanded[key];
+      html += cardOpen(false, false);
+      html += rankHTML(idx+1, false);
+      html += '<div onclick="toggleExpand(\''+key+'\')" style="flex:1;cursor:pointer;min-width:0;">'
+        +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">'
+        +'<div style="font-weight:600;font-size:15px;letter-spacing:-0.01em;color:'+C.text+';">'+f.t+'</div>'
+        +(f.rt?('<span style="font-family:\'JetBrains Mono\',monospace;font-size:9px;letter-spacing:0.08em;color:'+C.green+';border:1px solid '+C.green+'73;background:'+C.green+'14;border-radius:4px;padding:1px 6px;text-transform:uppercase;">Routine</span>'):"")
+        +'<span style="margin-left:auto;color:'+C.muted+';font-size:11px;transition:transform .2s ease;transform:'+(isExp?"rotate(180deg)":"none")+';">▼</span></div>'
+        +'<div style="font-size:13px;color:#a4aab6;margin-top:4px;line-height:1.5;">'+entry.note+'</div>'
+        +(isExp?infoRowsHTML(f.i):"")
+        +(isExp?lootRowHTML(f.r):"")
+        +'</div></div>';
+    });
+    html += '</div>';
+  });
+  return html;
+}
+
+/* ============================================================
+   MAIN RENDER
+   ============================================================ */
+function render(){
+  const dailyVisible = dailyItems.filter(i=>!i.opt || showOptional);
+  const dailyDone = dailyVisible.filter(i=>dailyState.done[i.id]).length;
+  const weeklyVisible = weeklyItems.filter(i=>!i.opt || showOptional);
+  const weeklyDone = weeklyVisible.filter(i=>weeklyState.done[i.id]).length;
+  const allPathSteps = pathPhases.reduce((a,p)=>a.concat(p.steps), []);
+  const pathDone = allPathSteps.filter(s=>pathState.done[s.id]).length;
+
+  const dailyPct = dailyVisible.length ? (dailyDone/dailyVisible.length*100) : 0;
+  const weeklyPct = weeklyVisible.length ? (weeklyDone/weeklyVisible.length*100) : 0;
+  const pathPct = allPathSteps.length ? (pathDone/allPathSteps.length*100) : 0;
+
+  const TABS = [
+    ["routine","Routine",C.green,"#0e1a12"],
+    ["path","Return Path",C.sky,"#0c1622"],
+    ["farms","Farms",C.yellow,"#221b04"],
+  ];
+
+  let html = '<div style="min-height:100vh;background:'+C.bg+';color:'+C.body+';">'
+    +'<div style="max-width:800px;margin:0 auto;padding:20px 14px 56px;">'
+    +'<div style="background:'+C.panel+';border:1px solid '+C.line+';border-radius:8px;padding:18px 18px;margin-bottom:16px;">'
+    +'<div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;letter-spacing:0.16em;color:'+C.green+';text-transform:uppercase;">Operator Protocol // Origin System</div>'
+    +'<h1 style="color:'+C.text+';font-weight:700;font-size:23px;letter-spacing:-0.01em;margin:6px 0 16px;">Tenno Protocol</h1>'
+    +'<div style="display:flex;flex-direction:column;gap:9px;">'
+    +overviewRowHTML("Path", C.sky, pathPct, pathDone+"/"+allPathSteps.length)
+    +overviewRowHTML("Daily", C.green, dailyPct, dailyDone+"/"+dailyVisible.length)
+    +overviewRowHTML("Weekly", C.yellow, weeklyPct, weeklyDone+"/"+weeklyVisible.length)
+    +'</div></div>'
+    +'<div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;">'
+    +TABS.map(([key,label,color,textOn])=>{
+      const active = tab===key;
+      return '<div onclick="setTab(\''+key+'\')" style="flex:1;min-width:100px;text-align:center;font-weight:600;font-size:12.5px;letter-spacing:0.02em;text-transform:uppercase;padding:11px 4px;border-radius:6px;cursor:pointer;user-select:none;'
+        +'border:1px solid '+(active?color:C.line)+';background:'+(active?color:C.panel)+';color:'+(active?textOn:C.muted)+';">'+label+'</div>';
+    }).join("")
+    +'</div>'
+    +'<div id="tabContent">'
+    +(tab==="routine" ? renderRoutineTab() : tab==="path" ? renderPathTab() : renderFarmsTab())
+    +'</div>'
+    +'<footer style="text-align:center;margin-top:26px;font-family:\'JetBrains Mono\',monospace;font-size:9.5px;color:#454b56;letter-spacing:0.08em;">TAP A CARD FOR DETAILS · TAP DOTTED TERMS FOR DEFINITIONS · PROGRESS SAVES ON THIS DEVICE</footer>'
+    +'</div></div>';
+
+  if(glossKey && GLOSSARY[glossKey]){
+    html += '<div onclick="closeGloss()" style="position:fixed;inset:0;z-index:50;background:rgba(0,0,0,0.65);">'
+      +'<div onclick="event.stopPropagation()" style="position:fixed;left:0;right:0;bottom:0;max-width:800px;margin:0 auto;background:'+C.panel+';border:1px solid '+C.line+';border-bottom:none;border-radius:12px 12px 0 0;padding:16px 18px 26px;">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">'
+      +'<span style="font-weight:700;font-size:16px;color:'+C.yellow+';">'+GLOSSARY[glossKey].t+'</span>'
+      +'<span onclick="closeGloss()" style="color:'+C.muted+';cursor:pointer;font-size:15px;padding:4px 8px;">✕</span></div>'
+      +'<p style="font-size:13px;line-height:1.6;color:'+C.body+';margin:0;">'+GLOSSARY[glossKey].d+'</p></div></div>';
+  }
+
+  document.getElementById("app").innerHTML = html;
+}
+
+/* live reset + vendor timer ticking */
+setInterval(function(){
+  const n = new Date();
+  const dKey = dailyBoundaryKey(n);
+  if(dailyState.resetKey !== dKey){ dailyState = {resetKey:dKey, done:{}}; saveJSON("wf-daily-state", dailyState); }
+  const wKey = mondayOf(n);
+  if(weeklyState.resetKey !== wKey){ weeklyState = {resetKey:wKey, done:{}}; saveJSON("wf-weekly-state", weeklyState); }
+  render();
+}, 1000);
+
+render();
+
+</script>
+</body>
+</html>
